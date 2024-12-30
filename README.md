@@ -84,7 +84,7 @@ This will generate a MOC file with the following contents:
 - [[File 3]]
 ```
 
-> [!WARN]\
+> [!WARNING]\
 > There is a bug in the current version of UtilMD where the MOC will include the generated MOC file. This is a known issue and is currently being worked on.
 
 ### Index / Table of Contents
