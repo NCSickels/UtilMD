@@ -47,3 +47,119 @@ options:
   -m, --moc             Generate MOC
   -n, --index           Generate index
 ```
+
+## Examples
+
+### MOC Generation
+
+Given the directory structure:
+
+```git
+.
+└── Project
+    ├── File_1
+    ├── File_2
+    └── Source
+        └── File_3
+```
+
+We can generate a MOC file with the following command:
+
+```bash
+python utilmd.py -i "Project/" --moc
+```
+
+This will generate a MOC file with the following contents:
+
+```markdown
+# Project MOC
+
+## Index Generation
+
+---
+
+- [[File 1]]
+- [[File 2]]
+
+### Source
+
+- [[File 3]]
+```
+
+> [!BUG]\
+> There is a bug in the current version of UtilMD where the MOC will include the generated MOC file. This is a known issue and is currently being worked on.
+
+### Index / Table of Contents
+
+Given the content of a markdown file (e.g. `Notes.md`):
+
+```markdown
+## Topic 1
+
+## Topic 2
+
+### Subtopic 1
+
+### Subtopic 2
+
+## Topic 3
+
+### Subtopic 3
+
+#### Subtopic 4
+```
+
+We can generate an index with the following command:
+
+```bash
+python utilmd.py -i "Notes.md" --index
+```
+
+This will generate an index with the following contents:
+
+```markdown
+# Notes
+
+## Index
+
+- [[Notes#Topic 1 | Topic 1]]
+- [[Notes#Topic 1#Topic 2 | Topic 2]]
+    - [[Notes#Topic 1#Topic 2#Subtopic 1 | Subtopic 1]]
+    - [[Notes#Topic 1#Topic 2#Subtopic 2 | Subtopic 2]]
+- [[Notes#Topic 1#Topic 3 | Topic 3]]
+    - [[Notes#Topic 1#Topic 3#Subtopic 3 | Subtopic 3]]
+      - [[Notes#Topic 1#Topic 3#Subtopic 3#Subtopic 4 | Subtopic 4]]
+
+
+## Topic 1
+
+## Topic 2
+
+### Subtopic 1
+
+### Subtopic 2
+
+## Topic 3
+
+### Subtopic 3
+
+#### Subtopic 4
+```
+
+The index will include links to each section of the markdown file with a default indentation of 4 spaces. The generated index will be inserted at the top of the markdown file. All existing content will be shifted down but will remain unchanged.
+
+> [!NOTE]\
+> The linking format is `[[file#section | display text]]`. The `file` is the name of the file without the extension, the `section` is the name of the section in the file, and the `display text` is the text that will be displayed in the index. This is primarily suited for Obsidian-flavored markdown. More formats are planned to be supported in the future.
+
+## Directory Structure - Tree
+
+UtilMD also includes a tree generator that can be used to generate a tree of the directory structure. An exaple of this can be seen below (same as the MOC example):
+
+```git
+.
+└── Project
+    ├── File_1
+    ├── File_2
+    └── Source
+        └── File_3
+```
