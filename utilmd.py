@@ -42,6 +42,11 @@ class UtilMD:
                             action="store_true", help="Generate MOC")
         parser.add_argument("-n", "--index", dest="index",
                             action="store_true", help="Generate index")
+        parser.add_argument("-v", "--version", action="version",
+                            version=f'%(prog)s v{self.version}')
+        parser.add_argument("-t", "--tree", action="store_true",
+                            help="Generate directory tree.")
+
         args = parser.parse_args()
 
         if args.input:
