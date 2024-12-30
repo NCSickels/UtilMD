@@ -103,6 +103,17 @@ class UtilMD:
             parser.print_help()
 
     def generate_moc(self, result: dict, directory: str, header=False, level=3) -> None:
+        """
+        Generate a markdown file with a table of contents (MOC) for a given directory.
+
+        Args:
+            result (dict): The result of the get_files_and_folders function.
+            directory (str): The directory to generate the MOC for.
+            header (bool, optional): Whether to include headers. Defaults to False.
+            level (int, optional): The level of the header. Defaults to 3.
+        Returns:
+            None
+        """
         _files = result.get('files', [])
         _subfolders = {k: v for k, v in result.items() if k != 'files'}
 
@@ -123,6 +134,15 @@ class UtilMD:
                     directory, key), header, level + 1)
 
     def generate_index(self, input_file, output_file) -> None:
+        """
+        Generate an index of all headers in a markdown file.
+
+        Args:
+            input_file (str): The input file to read.
+            output_file (str): The output file to write the index to.
+        Returns:
+            None
+        """
         headers = self.get_headers(input_file)
         existing_contents = self.get_contents(input_file)
         index_content = []
@@ -161,6 +181,15 @@ class UtilMD:
                     f.write('\n\n')
 
     def get_files_and_folders(self, directory: str, exclude_dirs=[]) -> dict:
+        """
+        Recursively get all files and folders in a directory.
+
+        Args:
+            directory (str): The directory to search.
+            exclude_dirs (list, optional): _description_. Defaults to [].
+        Returns:
+            dict: _description_
+        """
         _result = {}
 
         for item in os.listdir(directory):
@@ -175,6 +204,14 @@ class UtilMD:
         return _result
 
     def get_headers(self, input_file=None) -> list:
+        """
+        Get all headers from a markdown file.
+
+        Args:
+            input_file (str, optional): The input file to read. Defaults to None.
+        Returns:
+            _headers: A list of headers in the markdown file.
+        """
         _headers = []
         input_file = input_file if input_file else self.file_path
         with open(input_file, 'r') as f:
@@ -184,6 +221,14 @@ class UtilMD:
         return _headers
 
     def get_contents(self, input_file=None) -> str:
+        """
+        Get the contents of a file.
+
+        Args:
+            input_file (str): The input file to read. Defaults to None.
+        Returns:
+            str: The contents of the file.
+        """
         if os.path.isfile(input_file):
             with open(input_file, 'r') as f:
                 return f.read()
