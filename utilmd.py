@@ -95,6 +95,9 @@ class UtilMD:
                 print('Failed to generate MOC!')
         elif args.index and args.input and os.path.isfile(args.input):
             self.generate_index(args.input, args.output)
+        elif args.tree:
+            self.print_tree(
+                self.directory, self.output_file_name)
         else:
             self.banner()
             parser.print_help()
