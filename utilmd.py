@@ -6,7 +6,8 @@ import argparse
 class UtilMD:
     def __init__(self):
         self.directory = os.getcwd()
-        self.exclude_dirs = ['.history', '_images', '_assets', 'test']
+        self.exclude_dirs = ['.history', '.git',
+                             '.assets', '_images', '_assets', 'test']
         self.files_and_folders = None
         self.folder_name = os.path.basename(self.directory)
         self.output_file_name = ''  # f'{self.folder_name}.md'
