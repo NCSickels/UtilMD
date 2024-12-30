@@ -48,8 +48,6 @@ options:
   -n, --index           Generate index
 ```
 
-## Examples
-
 ### MOC Generation
 
 Given the directory structure:
