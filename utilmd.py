@@ -45,14 +45,14 @@ class UtilMD:
 
         if args.input:
             print("Input file or directory:", args.input)
+            self.directory = os.path.normpath(args.input)
             if os.path.isdir(args.input):
                 print(f'Input directory: {args.input}')
-                self.directory = args.input
+
                 self.files_and_folders = self.get_files_and_folders(
                     self.directory, self.exclude_dirs)
                 self.folder_name = os.path.basename(self.directory)
                 self.file_path = args.input
-                # os.path.join(self.directory, self.output_file_name)
             elif os.path.isfile(args.input):
                 print(f'Input file: {args.input}')
                 self.file_path = os.path.join(
@@ -67,15 +67,18 @@ class UtilMD:
             self.exclude_dirs = args.exclude_dirs
 
         if args.moc:
-            self.output_file_name = f'{os.path.basename(self.file_path)} MOC.md' if os.path.isfile(
-                self.file_path) else f'{self.folder_name} MOC.md'
-            self.new_file = open(self.file_path, 'w') if not os.path.isdir(self.directory) else open(
-                f'{self.directory}/{self.output_file_name}', 'w')
-
+            # Add check for in progress MOC filename already existing and prompt to overwrite
             self.files_and_folders = self.get_files_and_folders(
                 self.directory, self.exclude_dirs)
 
-            self.new_file.write(f'# {self.folder_name} MOC\n\n')
+            self.output_file_name = f'{self.folder_name} MOC.md' if os.path.isdir(
+                self.directory) else f'{os.path.splitext(os.path.basename(self.file_path))[0]} MOC.md'
+            self.new_file = open(self.file_path, 'w') if not os.path.isdir(self.directory) else open(
+                f'{self.directory}/{self.output_file_name}', 'w')
+
+            title = os.path.splitext(self.folder_name)[0] if os.path.isdir(
+                self.directory) else os.path.splitext(os.path.basename(self.file_path))[0]
+            self.new_file.write(f'# {title} MOC\n\n')
             self.new_file.write('## Index\n\n')
             self.new_file.write('---\n\n')
             try:
