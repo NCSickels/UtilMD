@@ -182,6 +182,63 @@ class UtilMD:
     def dump_contents(self) -> None:
         print(json.dumps(self.files_and_folders, sort_keys=True, indent=4))
 
+    def generate_tree(self, root_dir, prefix="", exclude_dirs=None):
+        """
+        Generates a visual representation of the directory tree structure.
+
+        Args:
+            root_dir (str): The root directory from which to generate the tree.
+            prefix (str, optional): The prefix to use for each line of the tree. Defaults to "".
+            exclude_dirs (list, optional): List of directories to exclude from the tree. Defaults to None.
+        Returns:
+            tree: A list of strings, each representing a line in the directory tree.
+        """
+        if exclude_dirs is None:
+            exclude_dirs = self.exclude_dirs
+
+        tree = []
+        contents = sorted(os.listdir(root_dir))
+        pointers = [("├── ", "│   "), ("└── ", "    ")]
+
+        for index, name in enumerate(contents):
+            path = os.path.join(root_dir, name)
+            if name in exclude_dirs:
+                continue
+            if index == len(contents) - 1:
+                tree.append(prefix + pointers[1][0] + name)
+                if os.path.isdir(path):
+                    tree.extend(self.generate_tree(
+                        path, prefix + pointers[1][1], exclude_dirs))
+            else:
+                tree.append(prefix + pointers[0][0] + name)
+                if os.path.isdir(path):
+                    tree.extend(self.generate_tree(
+                        path, prefix + pointers[0][1], exclude_dirs))
+
+        return tree
+
+    def print_tree(self, root_dir, output_file=None):
+        """
+        Prints the directory tree structure starting from the given root directory.
+
+        Args:
+            root_dir (str): The root directory from which to generate the tree structure.
+            output_file (str, optional): The file path where the tree structure should be written. 
+                                        If None, the tree structure is not written to a file.
+
+        Returns:
+            None
+        """
+        print(root_dir)
+        tree = self.generate_tree(root_dir, exclude_dirs=self.exclude_dirs)
+        if output_file:
+            with open(output_file, 'w') as f:
+                f.write(root_dir + '\n')
+                for line in tree:
+                    f.write(line + '\n')
+        for line in tree:
+            print(line)
+
 
 def main():
     markdown_utilities = UtilMD()
