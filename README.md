@@ -161,3 +161,12 @@ UtilMD also includes a tree generator that can be used to generate a tree of the
     └── Source
         └── File_3
 ```
+
+## Known Issues
+
+* [ ] MOC generation includes the generated MOC file.
+* [ ] Index generation does not support additional markdown formats.
+
+## Planned Features
+
+* [ ] Support for additional markdown formats.
