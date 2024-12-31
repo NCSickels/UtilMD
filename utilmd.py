@@ -1,20 +1,35 @@
-import os
-import json
 import argparse
+import json
+import os
+
+__version__ = '0.1.0'
 
 
 class UtilMD:
+    """
+    Utility class for generating markdown files.
+
+    Attributes:
+        directory (str): The current working directory.
+        exclude_dirs (list): A list of directories to exclude from any operation.
+        files_and_folders (dict): A dictionary containing all files and folders in a directory.
+        folder_name (str): The name of the current directory.
+        output_file_name (str): The name of the output file.
+        file_path (str): The path to the output file.
+        new_file (str): The newly created output file.
+        version (str): The current version of the script.
+    """
+
     def __init__(self):
         self.directory = os.getcwd()
         self.exclude_dirs = ['.history', '.git',
                              '.assets', '_images', '_assets', 'test']
         self.files_and_folders = None
         self.folder_name = os.path.basename(self.directory)
-        self.output_file_name = ''  # f'{self.folder_name}.md'
+        self.output_file_name = ''
         self.file_path = None
-        # os.path.join(self.directory, self.output_file_name)
         self.new_file = None
-        self.version = '0.1.0'
+        self.version = __version__
 
     def banner(self):
         print(f'''
@@ -73,7 +88,7 @@ class UtilMD:
             self.exclude_dirs = args.exclude_dirs
 
         if args.moc:
-            # Add check for in progress MOC filename already existing and
+            # TODO: Add check for in progress MOC filename already existing and
             # prompt to overwrite
             self.files_and_folders = self.get_files_and_folders(
                 self.directory, self.exclude_dirs)
@@ -159,9 +174,6 @@ class UtilMD:
         for header in headers:
             level = header.count('#')
             header_text = header.lstrip('#').strip()
-            # index_content.append(
-            # f'{"    " * (level - 1)}- [[{root_parent_header}#{header_text} |
-            # {header_text}]]')
             while len(header_stack) >= level:
                 header_stack.pop()
 
