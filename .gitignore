@@ -172,4 +172,5 @@ cython_debug/
 .history
 Project
 Notes.md
-.pre-commit-config.yaml
+*.swo
+*.swp
