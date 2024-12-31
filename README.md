@@ -1,4 +1,6 @@
 <!-- markdownlint-disable MD033 -->
+<!-- markdownlint-disable MD028 -->
+
 # UtilMD
 
 <p align="center">
@@ -23,7 +25,7 @@ pip install -r requirements.txt
 ```bash
 python utilmd.py --help
 
-=======================================================
+        =======================================================
             ██╗   ██╗████████╗██╗██╗     ███╗   ███╗██████╗
             ██║   ██║╚══██╔══╝██║██║     ████╗ ████║██╔══██╗
             ██║   ██║   ██║   ██║██║     ██╔████╔██║██║  ██║
@@ -55,19 +57,22 @@ Given the directory structure:
 ```git
 .
 └── Project
-    ├── File_1
-    ├── File_2
+    ├── Note_1.md
+    ├── Note_2.md
     └── Source
-        └── File_3
+        └── Note_3.md
 ```
 
-We can generate a MOC file with the following command:
+Where Project and Source are both directories. We can generate a MOC file with the following command:
 
 ```bash
 python utilmd.py -i "Project/" --moc
 ```
 
 This will generate a MOC file with the following contents:
+
+> [!WARNING]\
+> There is an issue in the current version of UtilMD where the MOC will include the generated MOC file. This is a known issue and is currently being worked on.
 
 ```markdown
 # Project MOC
@@ -76,16 +81,16 @@ This will generate a MOC file with the following contents:
 
 ---
 
-- [[File 1]]
-- [[File 2]]
+- [[Note 1]]
+- [[Note 2]]
 
 ### Source
 
-- [[File 3]]
+- [[Note 3]]
 ```
 
-> [!WARNING]\
-> There is a bug in the current version of UtilMD where the MOC will include the generated MOC file. This is a known issue and is currently being worked on.
+> [!NOTE]\
+> The root directory is used as the title of the MOC file but is not included in the MOC itself.
 
 ### Index / Table of Contents
 
