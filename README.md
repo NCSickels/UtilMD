@@ -71,9 +71,6 @@ python utilmd.py -i "Project/" --moc
 
 This will generate a MOC file with the following contents:
 
-> [!WARNING]\
-> There is an issue in the current version of UtilMD where the MOC will include the generated MOC file. This is a known issue and is currently being worked on.
-
 ```markdown
 # Project MOC
 
@@ -91,6 +88,9 @@ This will generate a MOC file with the following contents:
 
 > [!NOTE]\
 > The root directory is used as the title of the MOC file but is not included in the MOC itself.
+
+> [!WARNING]\
+> There is an known issue in the current version of UtilMD where the MOC will include the generated MOC file.
 
 ### Index / Table of Contents
 
