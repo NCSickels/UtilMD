@@ -73,7 +73,8 @@ class UtilMD:
             self.exclude_dirs = args.exclude_dirs
 
         if args.moc:
-            # Add check for in progress MOC filename already existing and prompt to overwrite
+            # Add check for in progress MOC filename already existing and
+            # prompt to overwrite
             self.files_and_folders = self.get_files_and_folders(
                 self.directory, self.exclude_dirs)
 
@@ -102,7 +103,8 @@ class UtilMD:
             self.banner()
             parser.print_help()
 
-    def generate_moc(self, result: dict, directory: str, header=False, level=3) -> None:
+    def generate_moc(self, result: dict, directory: str,
+                     header=False, level=3) -> None:
         """
         Generate a markdown file with a table of contents (MOC) for a given directory.
 
@@ -111,6 +113,7 @@ class UtilMD:
             directory (str): The directory to generate the MOC for.
             header (bool, optional): Whether to include headers. Defaults to False.
             level (int, optional): The level of the header. Defaults to 3.
+
         Returns:
             None
         """
@@ -140,6 +143,7 @@ class UtilMD:
         Args:
             input_file (str): The input file to read.
             output_file (str): The output file to write the index to.
+
         Returns:
             None
         """
@@ -156,7 +160,8 @@ class UtilMD:
             level = header.count('#')
             header_text = header.lstrip('#').strip()
             # index_content.append(
-            #     f'{"    " * (level - 1)}- [[{root_parent_header}#{header_text} | {header_text}]]')
+            # f'{"    " * (level - 1)}- [[{root_parent_header}#{header_text} |
+            # {header_text}]]')
             while len(header_stack) >= level:
                 header_stack.pop()
 
@@ -186,9 +191,10 @@ class UtilMD:
 
         Args:
             directory (str): The directory to search.
-            exclude_dirs (list, optional): _description_. Defaults to [].
+            exclude_dirs (list, optional): List of directories to exclude. Defaults to [].
+
         Returns:
-            dict: _description_
+            dict: A dictionary containing all files and folders in the directory.
         """
         _result = {}
 
@@ -209,6 +215,7 @@ class UtilMD:
 
         Args:
             input_file (str, optional): The input file to read. Defaults to None.
+
         Returns:
             _headers: A list of headers in the markdown file.
         """
@@ -226,6 +233,7 @@ class UtilMD:
 
         Args:
             input_file (str): The input file to read. Defaults to None.
+
         Returns:
             str: The contents of the file.
         """
@@ -242,8 +250,9 @@ class UtilMD:
 
         Args:
             root_dir (str): The root directory from which to generate the tree.
-            prefix (str, optional): The prefix to use for each line of the tree. Defaults to "".
+            prefix (str, optional): The prefix to use for each line of the tree. Defaults to empty string "".
             exclude_dirs (list, optional): List of directories to exclude from the tree. Defaults to None.
+
         Returns:
             tree: A list of strings, each representing a line in the directory tree.
         """
@@ -277,7 +286,7 @@ class UtilMD:
 
         Args:
             root_dir (str): The root directory from which to generate the tree structure.
-            output_file (str, optional): The file path where the tree structure should be written. 
+            output_file (str, optional): The file path where the tree structure should be written.
                                         If None, the tree structure is not written to a file.
 
         Returns:
