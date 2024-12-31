@@ -31,9 +31,9 @@ class UtilMD:
             "test",
         ]
         self.files_and_folders = None
-        self.folder_name = os.path.basename(self.directory)
+        self.folder_name = os.path.basename(self.directory) or ""
         self.output_file_name = ""
-        self.file_path = None
+        self.file_path = ""
         self.new_file = None
         self.version = __version__
 
@@ -78,17 +78,19 @@ class UtilMD:
         if args.input:
             print("Input file or directory:", args.input)
             self.directory = os.path.normpath(args.input)
-            if os.path.isdir(args.input):
-                print(f"Input directory: {args.input}")
+            if os.path.isdir(self.directory):
+                print(f"Input directory: {self.directory}")
 
                 self.files_and_folders = self.get_files_and_folders(
                     self.directory, self.exclude_dirs
                 )
                 self.folder_name = os.path.basename(self.directory)
-                self.file_path = args.input
-            elif os.path.isfile(args.input):
-                print(f"Input file: {args.input}")
-                self.file_path = os.path.join(self.directory, self.output_file_name)
+                self.file_path = self.directory
+            elif os.path.isfile(self.directory):
+                print(f"Input file: {self.directory}")
+                self.file_path = self.directory
+                self.directory = os.path.dirname(self.directory)
+                self.folder_name = os.path.basename(self.directory)
 
         if args.output:
             self.output_file_name = args.output
@@ -98,37 +100,37 @@ class UtilMD:
             self.exclude_dirs = args.exclude_dirs
 
         if args.moc:
-            # TODO: Add check for in progress MOC filename already existing and
-            # prompt to overwrite
-            self.files_and_folders = self.get_files_and_folders(
-                self.directory, self.exclude_dirs
-            )
-
             self.output_file_name = (
                 f"{self.folder_name} MOC.md"
                 if os.path.isdir(self.directory)
                 else f"{os.path.splitext(os.path.basename(self.file_path))[0]} MOC.md"
             )
-            self.new_file = (
-                open(self.file_path, "w")
-                if not os.path.isdir(self.directory)
-                else open(f"{self.directory}/{self.output_file_name}", "w")
+            self.file_path = os.path.join(self.directory, self.output_file_name)
+            self.new_file = open(self.file_path, "w")
+
+            self.files_and_folders = self.get_files_and_folders(
+                self.directory, self.exclude_dirs
             )
 
+            # Write the title without the extension
             title = (
                 os.path.splitext(self.folder_name)[0]
                 if os.path.isdir(self.directory)
                 else os.path.splitext(os.path.basename(self.file_path))[0]
             )
-            self.new_file.write(f"# {title} MOC\n\n")
-            self.new_file.write("## Index\n\n")
-            self.new_file.write("---\n\n")
-            try:
-                self.generate_moc(self.files_and_folders, self.directory, True)
-                print("MOC generated successfully!")
-            except Exception as e:
-                print(f"Error: {e}")
-                print("Failed to generate MOC!")
+
+            if self.new_file:
+                self.new_file.write(f"# {title} MOC\n\n")
+                self.new_file.write("## Index\n\n")
+                self.new_file.write("---\n\n")
+                try:
+                    self.generate_moc(self.files_and_folders, self.directory, True)
+                    print("MOC generated successfully!")
+                except Exception as e:
+                    print(f"Error: {e}")
+                    print("Failed to generate MOC!")
+                finally:
+                    self.new_file.close()
         elif args.index and args.input and os.path.isfile(args.input):
             self.generate_index(args.input, args.output)
         elif args.tree:
@@ -157,14 +159,15 @@ class UtilMD:
             # Exclude the current script file
             if file != os.path.basename(__file__):
                 output_file_name = os.path.splitext(file)[0].replace("_", " ")
-                self.new_file.write(f"- [[{output_file_name}]]\n")
+                if self.new_file:
+                    self.new_file.write(f"- [[{output_file_name}]]\n")
 
-        if _files:
+        if _files and self.new_file:
             self.new_file.write("\n")
 
         for key, value in _subfolders.items():
             if key not in self.exclude_dirs:
-                if header:
+                if header and self.new_file:
                     self.new_file.write("#" * level + " " + key + "\n\n")
                 self.generate_moc(
                     value, os.path.join(directory, key), header, level + 1
@@ -267,9 +270,17 @@ class UtilMD:
         Returns:
             str: The contents of the file.
         """
+        if input_file is None:
+            input_file = self.file_path
+
         if os.path.isfile(input_file):
-            with open(input_file, "r") as f:
-                return f.read()
+            try:
+                with open(input_file, "r") as f:
+                    return f.read()
+            except Exception as e:
+                print(f"Error: {e}")
+                return ""
+        return ""
 
     def dump_contents(self) -> None:
         print(json.dumps(self.files_and_folders, sort_keys=True, indent=4))
