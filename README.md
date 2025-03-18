@@ -17,10 +17,19 @@ UtilMD (Utility-MD) is a set of Python tools and utilities for automating tediou
 ```bash
 git clone https://github.com/NCSickels/UtilMD.git
 cd UtilMD
-pip install -r requirements.txt
+
+
+# (OPTIONAL) Ensure utilmd.py is executable
+chmod +x utilmd.py
+
+# (OPTIONAL) Move utilmd.py to a directory in your PATH, e.g. /usr/local/bin
+sudo mv utilmd.py /usr/local/bin/utilmd
 ```
 
 ## Usage
+
+> [!WARNING]\
+> If you get a 'python3\r: no such file or directory' error or 'use -[v]S to pass options in shebang lines' message, you may need to convert the file to Unix format. This can be done with the following command: `dos2unix utilmd.py`.
 
 ```bash
 python utilmd.py --help
