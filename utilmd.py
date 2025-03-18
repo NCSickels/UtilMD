@@ -1,8 +1,10 @@
+#!/usr/bin/env python3
 import argparse
 import json
 import os
+import logging
 
-__version__ = "0.1.0"
+__version__ = "0.1.4"
 
 
 class UtilMD:
@@ -36,8 +38,19 @@ class UtilMD:
         self.file_path = ""
         self.new_file = None
         self.version = __version__
+        self.logger = self._setup_logger()
 
-    def banner(self):
+    def _setup_logger(self) -> logging.Logger:
+        logger = logging.getLogger(__name__)
+        if not logger.hasHandlers():
+            handler = logging.StreamHandler()
+            formatter = logging.Formatter("[%(levelname)s] %(message)s")
+            handler.setFormatter(formatter)
+            logger.addHandler(handler)
+            logger.setLevel(logging.INFO)
+        return logger
+
+    def banner(self) -> None:
         print(f"""
         =======================================================
             ██╗   ██╗████████╗██╗██╗     ███╗   ███╗██████╗
@@ -51,7 +64,7 @@ class UtilMD:
         =======================================================
              """)
 
-    def run(self):
+    def run(self) -> None:
         parser = argparse.ArgumentParser(
             usage="%(prog)s [options]... <input file | directory> [exclude_dirs]... [output_file]"
         )
@@ -75,63 +88,13 @@ class UtilMD:
 
         args = parser.parse_args()
 
-        if args.input:
-            print("Input file or directory:", args.input)
-            self.directory = os.path.normpath(args.input)
-            if os.path.isdir(self.directory):
-                print(f"Input directory: {self.directory}")
-
-                self.files_and_folders = self.get_files_and_folders(
-                    self.directory, self.exclude_dirs
-                )
-                self.folder_name = os.path.basename(self.directory)
-                self.file_path = self.directory
-            elif os.path.isfile(self.directory):
-                print(f"Input file: {self.directory}")
-                self.file_path = self.directory
-                self.directory = os.path.dirname(self.directory)
-                self.folder_name = os.path.basename(self.directory)
-
-        if args.output:
-            self.output_file_name = args.output
-            self.file_path = os.path.join(self.directory, self.output_file_name)
-
-        if args.exclude_dirs:
-            self.exclude_dirs = args.exclude_dirs
+        self.handle_input(args)
+        self.handle_output(args)
+        self.handle_exclude_dirs(args)
 
         if args.moc:
-            self.output_file_name = (
-                f"{self.folder_name} MOC.md"
-                if os.path.isdir(self.directory)
-                else f"{os.path.splitext(os.path.basename(self.file_path))[0]} MOC.md"
-            )
-            self.file_path = os.path.join(self.directory, self.output_file_name)
-            self.new_file = open(self.file_path, "w")
-
-            self.files_and_folders = self.get_files_and_folders(
-                self.directory, self.exclude_dirs
-            )
-
-            # Write the title without the extension
-            title = (
-                os.path.splitext(self.folder_name)[0]
-                if os.path.isdir(self.directory)
-                else os.path.splitext(os.path.basename(self.file_path))[0]
-            )
-
-            if self.new_file:
-                self.new_file.write(f"# {title} MOC\n\n")
-                self.new_file.write("## Index\n\n")
-                self.new_file.write("---\n\n")
-                try:
-                    self.generate_moc(self.files_and_folders, self.directory, True)
-                    print("MOC generated successfully!")
-                except Exception as e:
-                    print(f"Error: {e}")
-                    print("Failed to generate MOC!")
-                finally:
-                    self.new_file.close()
-        elif args.index and args.input and os.path.isfile(args.input):
+            self.generate_moc_file()
+        elif args.index and args.input:
             self.generate_index(args.input, args.output)
         elif args.tree:
             self.print_tree(self.directory, self.output_file_name)
@@ -139,7 +102,68 @@ class UtilMD:
             self.banner()
             parser.print_help()
 
-    def generate_moc(self, result: dict, directory: str, header=False, level=3) -> None:
+    def handle_input(self, args) -> None:
+        self.banner()
+        if args.input:
+            self.logger.debug(f"Input file/directory: {args.input}")
+            self.directory = os.path.normpath(args.input)
+            if not os.path.exists(self.directory):
+                self.logger.error(f"Path does not exist: {self.directory}")
+                exit(1)
+            if os.path.isdir(self.directory):
+                if args.index:
+                    self.logger.error("Index generation requires a file input!")
+                    exit(1)
+                self.logger.info(f"Input directory: {self.directory}")
+                self.files_and_folders = self.get_files_and_folders(
+                    self.directory, self.exclude_dirs
+                )
+                self.folder_name = os.path.basename(self.directory)
+                self.file_path = self.directory
+            elif os.path.isfile(self.directory):
+                self.logger.info(f"Input file: {self.directory}")
+                self.file_path = self.directory
+                self.directory = os.path.dirname(self.directory)
+                self.folder_name = os.path.basename(self.directory)
+
+    def handle_output(self, args) -> None:
+        if args.output:
+            self.output_file_name = args.output
+            self.file_path = os.path.join(self.directory, self.output_file_name)
+
+    def handle_exclude_dirs(self, args) -> None:
+        if args.exclude_dirs:
+            self.exclude_dirs = args.exclude_dirs
+
+    def generate_moc_file(self) -> None:
+        self.output_file_name = (
+            f"{self.folder_name} MOC.md"
+            if os.path.isdir(self.directory)
+            else f"{os.path.splitext(os.path.basename(self.file_path))[0]} MOC.md"
+        )
+        self.file_path = os.path.join(self.directory, self.output_file_name)
+        with open(self.file_path, "w") as self.new_file:
+            self.files_and_folders = self.get_files_and_folders(
+                self.directory, self.exclude_dirs
+            )
+            title = (
+                os.path.splitext(self.folder_name)[0]
+                if os.path.isdir(self.directory)
+                else os.path.splitext(os.path.basename(self.file_path))[0]
+            )
+            self.new_file.write(f"# {title} MOC\n\n")
+            self.new_file.write("## Index\n\n")
+            self.new_file.write("---\n\n")
+            try:
+                self.generate_moc(self.files_and_folders, self.directory, True)
+                self.logger.info("MOC successfully generated!")
+            except Exception as e:
+                self.logger.error(f"{e}")
+                self.logger.error("Failed to generate MOC!")
+
+    def generate_moc(
+        self, result: dict, directory: str, header: bool = False, level: int = 3
+    ) -> None:
         """
         Generate a markdown file with a table of contents (MOC) for a given directory.
 
@@ -173,7 +197,7 @@ class UtilMD:
                     value, os.path.join(directory, key), header, level + 1
                 )
 
-    def generate_index(self, input_file, output_file) -> None:
+    def generate_index(self, input_file: str = "", output_file: str = "") -> None:
         """
         Generate an index of all headers in a markdown file.
 
@@ -184,6 +208,7 @@ class UtilMD:
         Returns:
             None
         """
+
         headers = self.get_headers(input_file)
         existing_contents = self.get_contents(input_file)
         index_content = []
@@ -218,8 +243,10 @@ class UtilMD:
                     f.write("\n## Index\n\n")
                     f.write("\n".join(index_content))
                     f.write("\n\n")
+        self.logger.info("Index successfully generated!")
+        self.logger.info(f"Index written to: {output_file}")
 
-    def get_files_and_folders(self, directory: str, exclude_dirs=[]) -> dict:
+    def get_files_and_folders(self, directory: str, exclude_dirs: list = []) -> dict:
         """
         Recursively get all files and folders in a directory.
 
@@ -242,7 +269,7 @@ class UtilMD:
                 _result[item] = self.get_files_and_folders(item_path, exclude_dirs)
         return _result
 
-    def get_headers(self, input_file=None) -> list:
+    def get_headers(self, input_file: str = "") -> list:
         """
         Get all headers from a markdown file.
 
@@ -260,7 +287,7 @@ class UtilMD:
                     _headers.append(line.strip())
         return _headers
 
-    def get_contents(self, input_file=None) -> str:
+    def get_contents(self, input_file: str = "") -> str:
         """
         Get the contents of a file.
 
@@ -285,7 +312,9 @@ class UtilMD:
     def dump_contents(self) -> None:
         print(json.dumps(self.files_and_folders, sort_keys=True, indent=4))
 
-    def generate_tree(self, root_dir, prefix="", exclude_dirs=None):
+    def generate_tree(
+        self, root_dir, prefix: str = "", exclude_dirs: list = []
+    ) -> list:
         """
         Generates a visual representation of the directory tree structure.
 
@@ -320,10 +349,9 @@ class UtilMD:
                     tree.extend(
                         self.generate_tree(path, prefix + pointers[0][1], exclude_dirs)
                     )
-
         return tree
 
-    def print_tree(self, root_dir, output_file=None):
+    def print_tree(self, root_dir: str, output_file: str = "") -> None:
         """
         Prints the directory tree structure starting from the given root directory.
 
@@ -346,7 +374,7 @@ class UtilMD:
             print(line)
 
 
-def main():
+def main() -> None:
     markdown_utilities = UtilMD()
     markdown_utilities.run()
 
