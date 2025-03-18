@@ -29,7 +29,7 @@ sudo mv utilmd.py /usr/local/bin/utilmd
 ## Usage
 
 > [!WARNING]\
-> If you get a 'python3\r: no such file or directory' error or 'use -[v]S to pass options in shebang lines' message, you may need to convert the file to Unix format. This can be done with the following command: `dos2unix utilmd.py`.
+> If you get a `python3\r: no such file or directory` error or `use -[v]S to pass options in shebang lines` message, you may need to convert the file to Unix format. This can be done with the following command: `dos2unix utilmd.py`.
 
 ```bash
 python utilmd.py --help
