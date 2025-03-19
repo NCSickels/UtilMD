@@ -165,7 +165,7 @@ The index will include links to each section of the markdown file with a default
 
 ## Directory Structure - Tree
 
-UtilMD also includes a tree generator that can be used to generate a tree of the directory structure. An exaple of this can be seen below (same as the MOC example):
+UtilMD also includes a tree generator that can be used to generate a tree of the directory structure. An example of this can be seen below (same as the MOC example):
 
 ```git
 .
