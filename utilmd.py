@@ -292,14 +292,39 @@ class UtilMD:
                 f"{tab_level}- [[{full_header_path} | {header_text}]]"
             )
 
-        with open(output_file, "w", newline="\n") as f:
-            lines = existing_contents.split("\n")
+        lines = existing_contents.split("\n")
+        # Find if there's an existing '## Index' section
+        index_start = None
+        index_end = None
+        for i, line in enumerate(lines):
+            if line.strip() == "## Index":
+                index_start = i
+                # Find where the index section ends (next header of same or higher level, or end of file)
+                for j in range(i+1, len(lines)):
+                    if lines[j].startswith("#") and lines[j].count("#") <= 2 and lines[j].strip() != "## Index":
+                        index_end = j
+                        break
+                if index_end is None:
+                    index_end = len(lines)
+                break
+
+        new_index_block = ["## Index", "", *index_content, ""]
+
+        if index_start is not None:
+            # Replace the existing index section
+            new_lines = lines[:index_start] + new_index_block + lines[index_end:]
+        else:
+            # Insert after first H1 header
+            new_lines = []
+            inserted = False
             for line in lines:
+                new_lines.append(line)
+                if not inserted and line.startswith("# "):
+                    new_lines += new_index_block
+                    inserted = True
+        with open(output_file, "w", newline="\n") as f:
+            for line in new_lines:
                 f.write(line + "\n")
-                if line.startswith("# "):  # Level 1 heading
-                    f.write("\n## Index\n\n")
-                    f.write("\n".join(index_content))
-                    f.write("\n\n")
         self.logger.info("Index successfully generated!")
         self.logger.info(f"Index written to: {output_file}")
 
