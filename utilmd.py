@@ -3,8 +3,9 @@ import argparse
 import json
 import os
 import logging
+import re
 
-__version__ = "0.1.4"
+__version__ = "0.1.5"
 
 
 class UtilMD:
@@ -39,6 +40,8 @@ class UtilMD:
         self.new_file = None
         self.version = __version__
         self.logger = self._setup_logger()
+        self.parser = self.create_arg_parser()
+        self.run()
 
     def _setup_logger(self) -> logging.Logger:
         logger = logging.getLogger(__name__)
@@ -64,14 +67,11 @@ class UtilMD:
         =======================================================
              """)
 
-    def run(self) -> None:
+    def create_arg_parser(self) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             usage="%(prog)s [options]... <input file | directory> [exclude_dirs]... [output_file]"
         )
         parser.add_argument("-i", "--input", type=str, help="Input file or directory")
-        parser.add_argument(
-            "-e", "--exclude-dirs", nargs="*", help="Directories to exclude."
-        )
         parser.add_argument("-o", "--output", type=str, help="Output file")
         parser.add_argument(
             "-m", "--moc", dest="moc", action="store_true", help="Generate MOC"
@@ -80,51 +80,72 @@ class UtilMD:
             "-n", "--index", dest="index", action="store_true", help="Generate index"
         )
         parser.add_argument(
-            "-v", "--version", action="version", version=f"%(prog)s v{self.version}"
-        )
-        parser.add_argument(
             "-t", "--tree", action="store_true", help="Generate directory tree."
         )
+        parser.add_argument(
+            "-e", "--exclude-dirs", nargs="*", help="Directories to exclude."
+        )
+        parser.add_argument(
+            "-r", "--include-root-moc", action="store_true",
+            help="Include MOC files in the root directory (default: excluded)"
+        )
+        parser.add_argument(
+            "-c", "--include-child-moc", action="store_true",
+            help="Include MOC files in child directories (default: included)"
+        )
+        parser.add_argument(
+            "-v", "--version", action="version", version=f"%(prog)s v{self.version}"
+        )
 
-        args = parser.parse_args()
+        return parser
+
+    def run(self) -> None:
+        self.banner()
+        args = self.parser.parse_args()
 
         self.handle_input(args)
         self.handle_output(args)
         self.handle_exclude_dirs(args)
 
         if args.moc:
-            self.generate_moc_file()
+            self.generate_moc_file(
+                ignore_root_moc=not args.include_root_moc,  # Default True, False if flag is set
+                ignore_child_moc=args.include_child_moc  # Default True, True if flag is set
+            )
         elif args.index and args.input:
             self.generate_index(args.input, args.output)
         elif args.tree:
             self.print_tree(self.directory, self.output_file_name)
         else:
             self.banner()
-            parser.print_help()
+            self.parser.print_help()
 
     def handle_input(self, args) -> None:
-        self.banner()
-        if args.input:
-            self.logger.debug(f"Input file/directory: {args.input}")
-            self.directory = os.path.normpath(args.input)
-            if not os.path.exists(self.directory):
-                self.logger.error(f"Path does not exist: {self.directory}")
+        if not args.input:
+            return 
+        
+        self.logger.debug(f"Input file/directory: {args.input}")
+        self.directory = os.path.normpath(args.input)
+        
+        if not os.path.exists(self.directory):
+            self.logger.error(f"Path does not exist: {self.directory}")
+            exit(1)
+            
+        if os.path.isdir(self.directory):
+            if args.index:
+                self.logger.error("Provided input is a directory. Index generation requires an file input!")
                 exit(1)
-            if os.path.isdir(self.directory):
-                if args.index:
-                    self.logger.error("Index generation requires a file input!")
-                    exit(1)
-                self.logger.info(f"Input directory: {self.directory}")
-                self.files_and_folders = self.get_files_and_folders(
-                    self.directory, self.exclude_dirs
-                )
-                self.folder_name = os.path.basename(self.directory)
-                self.file_path = self.directory
-            elif os.path.isfile(self.directory):
-                self.logger.info(f"Input file: {self.directory}")
-                self.file_path = self.directory
-                self.directory = os.path.dirname(self.directory)
-                self.folder_name = os.path.basename(self.directory)
+            self.logger.info(f"Input directory: {self.directory}")
+            self.files_and_folders = self.get_files_and_folders(
+                self.directory, self.exclude_dirs
+            )
+            self.folder_name = os.path.basename(self.directory)
+            self.file_path = self.directory
+        elif os.path.isfile(self.directory):
+            self.logger.info(f"Input file: {self.directory}")
+            self.file_path = self.directory
+            self.directory = os.path.dirname(self.directory)
+            self.folder_name = os.path.basename(self.directory)
 
     def handle_output(self, args) -> None:
         if args.output:
@@ -135,7 +156,11 @@ class UtilMD:
         if args.exclude_dirs:
             self.exclude_dirs = args.exclude_dirs
 
-    def generate_moc_file(self) -> None:
+    def generate_moc_file(self, ignore_root_moc: bool = True, ignore_child_moc: bool = False) -> None:
+        """
+        Generate the MOC file for the current directory.
+        By default, ignores MOC files in the root, but includes child MOCs.
+        """
         self.output_file_name = (
             f"{self.folder_name} MOC.md"
             if os.path.isdir(self.directory)
@@ -155,14 +180,29 @@ class UtilMD:
             self.new_file.write("## Index\n\n")
             self.new_file.write("---\n\n")
             try:
-                self.generate_moc(self.files_and_folders, self.directory, True)
+                self.generate_moc(
+                    self.files_and_folders,
+                    self.directory,
+                    header=True,
+                    level=3,
+                    ignore_root_moc=ignore_root_moc,
+                    ignore_child_moc=ignore_child_moc,
+                    is_root=True
+                )
                 self.logger.info("MOC successfully generated!")
             except Exception as e:
                 self.logger.error(f"{e}")
                 self.logger.error("Failed to generate MOC!")
 
     def generate_moc(
-        self, result: dict, directory: str, header: bool = False, level: int = 3
+        self,
+        result: dict = {},
+        directory: str = "",
+        header: bool = False,
+        level: int = 3,
+        ignore_root_moc: bool = True,
+        ignore_child_moc: bool = False,
+        is_root: bool = False
     ) -> None:
         """
         Generate a markdown file with a table of contents (MOC) for a given directory.
@@ -172,6 +212,9 @@ class UtilMD:
             directory (str): The directory to generate the MOC for.
             header (bool, optional): Whether to include headers. Defaults to False.
             level (int, optional): The level of the header. Defaults to 3.
+            ignore_root_moc (bool): Ignore MOC files in the root directory.
+            ignore_child_moc (bool): Ignore MOC files in subdirectories.
+            is_root (bool): Whether this is the root directory call.
 
         Returns:
             None
@@ -179,12 +222,21 @@ class UtilMD:
         _files = result.get("files", [])
         _subfolders = {k: v for k, v in result.items() if k != "files"}
 
+        # Exclude any file with 'MOC' (case-insensitive) anywhere in the name and ending with .md
+        moc_pattern = re.compile(r"MOC", re.IGNORECASE)
         for file in _files:
             # Exclude the current script file
-            if file != os.path.basename(__file__):
-                output_file_name = os.path.splitext(file)[0].replace("_", " ")
-                if self.new_file:
-                    self.new_file.write(f"- [[{output_file_name}]]\n")
+            if file == os.path.basename(__file__):
+                continue
+            # Ignore any .md file with 'MOC' in the name in root or child directories as specified
+            if (
+                (is_root and ignore_root_moc and file.lower().endswith('.md') and moc_pattern.search(file)) or
+                (not is_root and ignore_child_moc and file.lower().endswith('.md') and moc_pattern.search(file))
+            ):
+                continue
+            output_file_name = os.path.splitext(file)[0].replace("_", " ")
+            if self.new_file:
+                self.new_file.write(f"- [[{output_file_name}]]\n")
 
         if _files and self.new_file:
             self.new_file.write("\n")
@@ -194,7 +246,13 @@ class UtilMD:
                 if header and self.new_file:
                     self.new_file.write("#" * level + " " + key + "\n\n")
                 self.generate_moc(
-                    value, os.path.join(directory, key), header, level + 1
+                    value,
+                    os.path.join(directory, key),
+                    header,
+                    level + 1,
+                    ignore_root_moc=ignore_root_moc,
+                    ignore_child_moc=ignore_child_moc,
+                    is_root=False
                 )
 
     def generate_index(self, input_file: str = "", output_file: str = "") -> None:
@@ -218,22 +276,21 @@ class UtilMD:
         )
 
         header_stack = []
-
+        header_levels = []
         for header in headers:
             level = header.count("#")
             header_text = header.lstrip("#").strip()
-            while len(header_stack) >= level:
+            # Remove headers from stack that are at the same or deeper level
+            while header_levels and header_levels[-1] >= level:
                 header_stack.pop()
-
+                header_levels.pop()
             header_stack.append(header_text)
+            header_levels.append(level)
             full_header_path = f"{root_parent_header}#" + "#".join(header_stack)
-            if level == 2:
-                index_content.append(f"- [[{full_header_path} | {header_text}]]")
-            else:
-                tab_level = "  " * (level - 1)
-                index_content.append(
-                    f"{tab_level}- [[{full_header_path} | {header_text}]]"
-                )
+            tab_level = "  " * (level - 1)
+            index_content.append(
+                f"{tab_level}- [[{full_header_path} | {header_text}]]"
+            )
 
         with open(output_file, "w", newline="\n") as f:
             lines = existing_contents.split("\n")
@@ -246,7 +303,7 @@ class UtilMD:
         self.logger.info("Index successfully generated!")
         self.logger.info(f"Index written to: {output_file}")
 
-    def get_files_and_folders(self, directory: str, exclude_dirs: list = []) -> dict:
+    def get_files_and_folders(self, directory: str = "", exclude_dirs: list = []) -> dict:
         """
         Recursively get all files and folders in a directory.
 
@@ -313,7 +370,7 @@ class UtilMD:
         print(json.dumps(self.files_and_folders, sort_keys=True, indent=4))
 
     def generate_tree(
-        self, root_dir, prefix: str = "", exclude_dirs: list = []
+        self, root_dir: str = "", prefix: str = "", exclude_dirs: list = []
     ) -> list:
         """
         Generates a visual representation of the directory tree structure.
@@ -351,7 +408,7 @@ class UtilMD:
                     )
         return tree
 
-    def print_tree(self, root_dir: str, output_file: str = "") -> None:
+    def print_tree(self, root_dir: str = "", output_file: str = "") -> None:
         """
         Prints the directory tree structure starting from the given root directory.
 
@@ -375,8 +432,7 @@ class UtilMD:
 
 
 def main() -> None:
-    markdown_utilities = UtilMD()
-    markdown_utilities.run()
+    UtilMD()
 
 
 if __name__ == "__main__":
