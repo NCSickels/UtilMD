@@ -15,9 +15,9 @@ UtilMD (Utility-MD) is a set of Python tools and utilities for automating tediou
 ## Installation
 
 ```bash
+# Clone the repository
 git clone https://github.com/NCSickels/UtilMD.git
 cd UtilMD
-
 
 # (OPTIONAL) Ensure utilmd.py is executable
 chmod +x utilmd.py
@@ -42,7 +42,7 @@ python utilmd.py --help
             ╚██████╔╝   ██║   ██║███████╗██║ ╚═╝ ██║██████╔╝
              ╚═════╝    ╚═╝   ╚═╝╚══════╝╚═╝     ╚═╝╚═════╝
         =======================================================
-            v0.1.0            Noah Sickels (@NCSickels)
+            v0.1.5            Noah Sickels (@NCSickels)
         =======================================================
 
 usage: utilmd.py [options]... <input file | directory> [exclude_dirs]... [output_file]
@@ -51,28 +51,38 @@ options:
   -h, --help            show this help message and exit
   -i INPUT, --input INPUT
                         Input file or directory
-  -e [EXCLUDE_DIRS ...], --exclude-dirs [EXCLUDE_DIRS ...]
-                        Directories to exclude.
   -o OUTPUT, --output OUTPUT
                         Output file
   -m, --moc             Generate MOC
   -n, --index           Generate index
+  -t, --tree            Generate directory tree.
+  -e [EXCLUDE_DIRS ...], --exclude-dirs [EXCLUDE_DIRS ...]
+                        Directories to exclude.
+  -r, --include-root-moc
+                        Include MOC files in the root directory.
+  -c, --ignore-child-moc
+                        Ignore MOC files in child directories.
+  -v, --version         show program's version number and exit
 ```
 
 ### MOC Generation
 
-Given the directory structure:
+Given the structure of an input directory (e.g. `Project/`):
 
 ```git
 .
-└── Project
-    ├── Note_1.md
-    ├── Note_2.md
-    └── Source
-        └── Note_3.md
+└── Project                    # Directory 
+    ├── Class_Notes_1.md
+    ├── Class_Notes_2.md
+    ├── Project MOC.md         # (root MOC, will be excluded by default)
+    └── Design                 # Directory
+        ├── Class_Notes_3.md
+        └── Design MOC.md      # (child MOC, will be included by default)
 ```
 
-Where Project and Source are both directories. We can generate a MOC file with the following command:
+By default, root-level MOC files (including the one being generated) are **excluded** from the generated MOC, while child MOC files (e.g., `Design MOC.md`) are **included**. This behavior can be modified with the `-r` (or `--include-root-moc`) and the `-c` (or `--ignore-child-moc`) flags. Note that the root directory is used as the title of the generated MOC file.
+
+Generate a MOC file with the following command:
 
 ```bash
 python utilmd.py -i "Project/" --moc
@@ -87,41 +97,39 @@ This will generate a MOC file with the following contents:
 
 ---
 
-- [[Note 1]]
-- [[Note 2]]
+- [[Class_Notes_1]]
+- [[Class_Notes_2]]
 
-### Source
+### Design
 
-- [[Note 3]]
+- [[Class_Notes_3]]
+- [[Design MOC]]
 ```
 
 > [!NOTE]\
-> The root directory is used as the title of the MOC file but is not included in the MOC itself.
-
-> [!WARNING]\
-> There is an known issue in the current version of UtilMD where the MOC will include the generated MOC file.
+> The root directory is used as the title of the generated MOC file.
 
 ### Index / Table of Contents
 
 Given the content of a markdown file (e.g. `Notes.md`):
 
 ```markdown
-## Topic 1
+## Introduction
 
-## Topic 2
+## Networking
 
-### Subtopic 1
+### TCP/IP
 
-### Subtopic 2
+### Firewalls
 
-## Topic 3
+## Cryptography
 
-### Subtopic 3
+### Symmetric Encryption
 
-#### Subtopic 4
+#### AES
 ```
 
-We can generate an index with the following command:
+Generate an index with the following command:
 
 ```bash
 python utilmd.py -i "Notes.md" --index
@@ -134,51 +142,58 @@ This will generate an index with the following contents:
 
 ## Index
 
-- [[Notes#Topic 1 | Topic 1]]
-- [[Notes#Topic 1#Topic 2 | Topic 2]]
-    - [[Notes#Topic 1#Topic 2#Subtopic 1 | Subtopic 1]]
-    - [[Notes#Topic 1#Topic 2#Subtopic 2 | Subtopic 2]]
-- [[Notes#Topic 1#Topic 3 | Topic 3]]
-    - [[Notes#Topic 1#Topic 3#Subtopic 3 | Subtopic 3]]
-      - [[Notes#Topic 1#Topic 3#Subtopic 3#Subtopic 4 | Subtopic 4]]
+- [[Notes#Introduction | Introduction]]
+- [[Notes#Networking | Networking]]
+    - [[Notes#Networking#TCP/IP | TCP/IP]]
+    - [[Notes#Networking#Firewalls | Firewalls]]
+- [[Notes#Cryptography | Cryptography]]
+    - [[Notes#Cryptography#Symmetric Encryption | Symmetric Encryption]]
+      - [[Notes#Cryptography#Symmetric Encryption#AES | AES]]
 
 
-## Topic 1
+## Introduction
 
-## Topic 2
+## Networking
 
-### Subtopic 1
+### TCP/IP
 
-### Subtopic 2
+### Firewalls
 
-## Topic 3
+## Cryptography
 
-### Subtopic 3
+### Symmetric Encryption
 
-#### Subtopic 4
+#### AES
 ```
 
 The index will include links to each section of the markdown file with a default indentation of 4 spaces. The generated index will be inserted at the top of the markdown file. All existing content will be shifted down but will remain unchanged.
 
 > [!NOTE]\
-> The linking format is `[[file#section | display text]]`. The `file` is the name of the file without the extension, the `section` is the name of the section in the file, and the `display text` is the text that will be displayed in the index. This is primarily suited for Obsidian-flavored markdown. More formats are planned to be supported in the future.
+> The linking format is `[[file#section | display text]]`. In this format, `file` refers to the file name without its extension, `section` is the name of the specific section within that file, and `display text` is the text displayed in the index. This format is primarily designed for Obsidian-flavored markdown. More formats are expected to be supported in the future.
 
 ## Directory Structure - Tree
 
-UtilMD also includes a tree generator that can be used to generate a tree of the directory structure. An exaple of this can be seen below (same as the MOC example):
+UtilMD also includes a tree generator that can be used to generate a tree of the directory structure. An example of this can be seen below (same as the MOC example):
+
+```git
+python utilmd.py -i "Project/" --tree
+```
+
+This will generate the following tree structure:
 
 ```git
 .
-└── Project
-    ├── File_1
-    ├── File_2
-    └── Source
-        └── File_3
+└── Project     
+    ├── Class_Notes_1.md
+    ├── Class_Notes_2.md
+    ├── Project MOC.md
+    └── Design          
+        ├── Class_Notes_3.md
+        └── Design MOC.md
 ```
 
 ## Known Issues
 
-* [ ] MOC generation includes the generated MOC file.
 * [ ] Index generation does not support additional markdown formats.
 
 ## Planned Features
